@@ -1,0 +1,124 @@
+﻿@model List<OnlineFoodOrdering.Models.CartItem>
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Checkout";
+
+    decimal totalPrice = Model.Sum(i => i.Price * i.Quantity);
+}
+
+<div class="container mt-4">
+    <h2 class="mb-4">Checkout</h2>
+
+    @if (Model.Count == 0)
+    {
+        <div class="alert alert-warning">
+            Your cart is empty.
+        </div>
+    }
+    else
+    {
+        <!-- ================= ORDER SUMMARY ================= -->
+        <div class="card mb-4">
+            <div class="card-header bg-dark text-white">
+                Order Summary
+            </div>
+
+            <div class="card-body p-0">
+                <table class="table mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Food</th>
+                            <th>Qty</th>
+                            <th>Price</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@item.Name</td>
+                                <td>@item.Quantity</td>
+                                <td>$@(item.Price* item.Quantity)</td>
+                            </tr>
+                        }
+                    </tbody>
+
+                    <tfoot>
+                        <tr class="table-dark">
+                            <th colspan="2" class="text-end">Total</th>
+                            <th>$@totalPrice</th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- ================= DELIVERY & PAYMENT ================= -->
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                Delivery & Payment
+            </div>
+
+            <div class="card-body">
+                <form asp-action="Checkout" method="post" id="checkout-form">
+
+                    <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <input name="customerName" class="form-control" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Phone Number</label>
+                        <input name="phoneNumber" class="form-control" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Address</label>
+                        <textarea name="address" class="form-control" rows="2" required></textarea>
+                    </div>
+
+                    <!-- PAYMENT METHOD -->
+                    <div class="mb-3">
+                        <label class="form-label">Payment Method</label>
+                        <select name="paymentMethod" id="paymentMethod" class="form-select" required>
+                            <option value="Cash On Delivery">Cash On Delivery</option>
+                            <option value="Card">Card Payment</option>
+                        </select>
+                    </div>
+
+                    <!-- STRIPE CARD INPUT -->
+                    <div id="card-section" class="mb-3" style="display:none;">
+                        <label class="form-label">Card Details</label>
+                        <div id="card-element" class="form-control p-2"></div>
+                        <small class="text-muted">
+                            Test card: 4242 4242 4242 4242
+                        </small>
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100">
+                        Place Order
+                    </button>
+                </form>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- ================= STRIPE JS ================= -->
+<script src="https://js.stripe.com/v3/"></script>
+
+<script>
+    const stripe = Stripe("@Context.RequestServices
+        .GetService<IConfiguration>()["Stripe:PublishableKey"]");
+
+    const elements = stripe.elements();
+    const card = elements.create("card");
+    card.mount("#card-element");
+
+    document.getElementById("paymentMethod").addEventListener("change", function () {
+        document.getElementById("card-section").style.display =
+            this.value === "Card" ? "block" : "none";
+    });
+</script>

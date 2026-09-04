@@ -1,0 +1,45 @@
+﻿@model List<OnlineFoodOrdering.Models.FoodItem>
+@using Microsoft.AspNetCore.Http
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Order Your Food";
+    int? isAdmin = Context.Session.GetInt32("IsAdmin");
+}
+
+<h2>Our Menu</h2>
+
+<div class="row">
+    @if (Model != null && Model.Count > 0)
+    {
+        foreach (var item in Model)
+        {
+            <div class="col-md-3 mb-4">
+                <div class="card h-100">
+                    <img src="@item.ImagePath"
+                         class="card-img-top"
+                         style="height:200px; object-fit:cover;" />
+
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">@item.Name</h5>
+                        <p class="card-text">$@item.Price</p>
+
+                        @* SHOW ADD TO CART ONLY FOR NON-ADMIN *@
+                        @if (isAdmin != 1)
+                        {
+                            <a asp-action="AddToCart"
+                               asp-route-id="@item.FoodItemId"
+                               class="btn btn-primary mt-auto">
+                                Add to Cart
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <p>No items available.</p>
+    }
+</div>

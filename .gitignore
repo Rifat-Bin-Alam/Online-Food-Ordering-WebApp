@@ -1,0 +1,16 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+OnlineFoodOrdering.csproj.user
+
+# Build files
+bin/
+obj/
+
+# SQLite temporary files
+*.db-shm
+*.db-wal
+
+# Local development settings
+appsettings.Development.json

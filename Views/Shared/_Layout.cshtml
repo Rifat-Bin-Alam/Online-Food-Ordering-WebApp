@@ -1,0 +1,162 @@
+﻿@using Microsoft.AspNetCore.Http
+@{
+    var userName = Context.Session.GetString("UserName");
+    int? isAdmin = Context.Session.GetInt32("IsAdmin");
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - OnlineFoodOrdering</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/OnlineFoodOrdering.styles.css" asp-append-version="true" />
+</head>
+<body>
+
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <div class="container-fluid">
+
+                <!-- Brand -->
+                <a class="navbar-brand fw-bold" asp-controller="Main" asp-action="Index">
+                    Order Your Food
+                </a>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarContent">
+
+                    <!-- LEFT SIDE: Search & My Orders (Users only) -->
+                    <ul class="navbar-nav me-auto align-items-center">
+                        @if (isAdmin != 1)
+                        {
+                            <li class="nav-item me-3">
+                                <form class="d-flex" method="get" asp-controller="Main" asp-action="Index">
+                                    <input class="form-control me-2" type="search" name="search" placeholder="Search food" />
+                                    <button class="btn btn-outline-light" type="submit">Search</button>
+                                </form>
+                            </li>
+
+                            @if (!string.IsNullOrEmpty(userName))
+                            {
+                                <li class="nav-item me-3">
+                                    <a class="nav-link" asp-controller="Main" asp-action="MyOrders">My Orders</a>
+                                </li>
+
+                                <!-- Notification Bell -->
+                                <li class="nav-item dropdown me-3">
+                                    <a class="nav-link position-relative" href="#" role="button" data-bs-toggle="dropdown">
+                                        🔔
+                                        @if (ViewBag.NotificationCount > 0)
+                                        {
+                                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                                @ViewBag.NotificationCount
+                                            </span>
+                                        }
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end" style="width: 300px;">
+                                        @if (ViewBag.Notifications != null && ViewBag.Notifications.Count > 0)
+                                        {
+                                            foreach (var n in ViewBag.Notifications)
+                                            {
+                                                <li>
+                                                    <a class="dropdown-item small" asp-action="MarkNotificationRead" asp-route-id="@n.Id">
+                                                        @n.Message <br />
+                                                        <span class="text-muted">@n.CreatedAt.ToString("g")</span>
+                                                    </a>
+                                                </li>
+                                                <li><hr class="dropdown-divider" /></li>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <li class="dropdown-item text-muted">No notifications</li>
+                                        }
+                                    </ul>
+                                </li>
+                            }
+                        }
+                    </ul>
+
+                    <!-- RIGHT SIDE: Admin / Cart / Login -->
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                        @if (isAdmin == 1)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Admin" asp-action="Index">Admin Dashboard</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Admin" asp-action="FoodList">Food List</a>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Main" asp-action="Cart">Cart</a>
+                            </li>
+                        }
+
+                        @if (string.IsNullOrEmpty(userName))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Account" asp-action="Login">Login</a>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Account" asp-action="Logout">Logout (@userName)</a>
+                            </li>
+                        }
+                    </ul>
+
+                </div>
+            </div>
+        </nav>
+
+        <!-- TEMP MESSAGES -->
+        @if (TempData["OrderNotification"] != null)
+        {
+            <div class="alert alert-info text-center m-0">
+                🔔 @TempData["OrderNotification"]
+            </div>
+        }
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success text-center m-0">
+                @TempData["Success"]
+            </div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger text-center m-0">
+                @TempData["Error"]
+            </div>
+        }
+
+    </header>
+
+    <div class="container mt-4">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted mt-4">
+        <div class="container text-center py-2">
+            OnlineFoodOrdering
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+
+</body>
+</html>

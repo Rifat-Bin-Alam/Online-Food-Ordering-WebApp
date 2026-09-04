@@ -1,0 +1,102 @@
+﻿@model List<OnlineFoodOrdering.Models.Order>
+
+<h2>All Orders</h2>
+
+<!-- ================= Filter / Sort by Status ================= -->
+<form method="get" class="mb-3 d-flex align-items-center gap-2">
+    <label for="statusFilter">Filter by Status:</label>
+    <select id="statusFilter" name="status" class="form-select w-auto d-inline-block">
+        <option value="">All</option>
+        <option value="Processing" selected="@(ViewData["SelectedStatus"]?.ToString() == "Processing")">Processing</option>
+        <option value="Confirmed" selected="@(ViewData["SelectedStatus"]?.ToString() == "Confirmed")">Confirmed</option>
+        <option value="Delivered" selected="@(ViewData["SelectedStatus"]?.ToString() == "Delivered")">Delivered</option>
+    </select>
+
+    <input type="hidden" name="sortOrder" value="@(ViewData["SortOrder"]?.ToString() ?? "desc")" />
+
+    <button type="submit" class="btn btn-primary">Filter</button>
+
+    <!-- Sort buttons for ascending/descending -->
+    <a href="@Url.Action("Orders", new { status = ViewData["SelectedStatus"], sortOrder = "asc" })" class="btn btn-secondary ms-2">
+        OrderId ↑
+    </a>
+    <a href="@Url.Action("Orders", new { status = ViewData["SelectedStatus"], sortOrder = "desc" })" class="btn btn-secondary">
+        OrderId ↓
+    </a>
+</form>
+
+<table class="table table-bordered table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>Order Id</th>
+            <th>Customer</th>
+            <th>Food</th>
+            <th>Qty</th>
+            <th>Price</th>
+            <th>Address</th>
+            <th>Phone</th>
+            <th>Payment</th>
+            <th>Status</th>
+            <th>Order Date/Time</th>
+            <th>Update</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var order in Model)
+        {
+            <tr>
+                <td>@order.OrderId</td>
+                <td>@(!string.IsNullOrEmpty(order.CustomerName) ? order.CustomerName : order.User?.FullName ?? "Unknown")</td>
+                <td>
+                    @foreach (var item in order.OrderItems)
+                    {
+                        <div>@(item.FoodItem?.Name ?? "N/A")</div>
+                    }
+                </td>
+                <td>
+                    @foreach (var item in order.OrderItems)
+                    {
+                        <div>@item.Quantity</div>
+                    }
+                </td>
+                <td>
+                    @foreach (var item in order.OrderItems)
+                    {
+                        <div>$@((item.FoodItem?.Price ?? 0) * item.Quantity)</div>
+                    }
+                </td>
+                <td>@(!string.IsNullOrEmpty(order.Address) ? order.Address : "N/A")</td>
+                <td>@(!string.IsNullOrEmpty(order.PhoneNumber) ? order.PhoneNumber : "N/A")</td>
+                <td>@(!string.IsNullOrEmpty(order.PaymentMethod) ? order.PaymentMethod : "N/A")</td>
+                <td>
+                    <span class="badge @(order.Status == "Processing" ? "bg-warning" :
+                                                                   order.Status == "Confirmed" ? "bg-primary" :
+                                                                   "bg-success")">
+                        @order.Status
+                    </span>
+                </td>
+                <td>@order.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
+                <td>
+                    <form asp-controller="Admin" asp-action="UpdateOrderStatus" method="post">
+                        <input type="hidden" name="id" value="@order.OrderId" />
+                        <select name="status" class="form-select form-select-sm mb-1">
+                            <a href="d:\iubat\csc 440\project\onlinefoodordering\models\cartitem.cs">d:\iubat\csc 440\project\onlinefoodordering\models\cartitem.cs</a>
+                            <option value="Processing" selected="@(order.Status == "Processing")">Processing</option>
+                            <option value="Confirmed" selected="@(order.Status == "Confirmed")">Confirmed</option>
+                            <option value="Delivered" selected="@(order.Status == "Delivered")">Delivered</option>
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-primary w-100">Update</button>
+                    </form>
+                </td>
+            </tr>
+
+            <!-- Total Price Row -->
+            <tr class="table-secondary">
+                <td colspan="5" class="text-end"><strong>Total:</strong></td>
+                <td colspan="6">
+                    $@order.OrderItems.Sum(i => (i.FoodItem?.Price ?? 0) * i.Quantity)
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

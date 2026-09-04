@@ -1,0 +1,52 @@
+﻿@model OnlineFoodOrdering.Models.User
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Register";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card shadow-sm p-4">
+                <h2 class="text-center mb-4">Register</h2>
+
+                @if (TempData["Success"] != null)
+                {
+                    <div class="alert alert-success text-center">
+                        @TempData["Success"]
+                    </div>
+                }
+
+                <form asp-action="Register" method="post">
+                    <div class="mb-3">
+                        <label asp-for="FullName" class="form-label">Full Name</label>
+                        <input asp-for="FullName" class="form-control" placeholder="Enter your full name" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label">Email</label>
+                        <input asp-for="Email" type="email" class="form-control" placeholder="Enter your email" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Password" class="form-label">Password</label>
+                        <input asp-for="Password" type="password" class="form-control" placeholder="Enter your password" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="PhoneNumber" class="form-label">Phone Number</label>
+                        <input asp-for="PhoneNumber" class="form-control" placeholder="Enter your phone number" required />
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100">Register</button>
+                </form>
+
+                <p class="text-center mt-3">
+                    Already have an account?
+                    <a asp-controller="Account" asp-action="Login">Login here</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
