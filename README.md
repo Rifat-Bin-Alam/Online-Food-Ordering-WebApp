@@ -1,6 +1,3 @@
-# Online-Food-Ordering-WebApp
-A full-stack Online Food Ordering System built with ASP.NET Core MVC, Entity Framework Core, SQLite, and Stripe. Customers can browse food, manage carts, place orders, and make online payments, while admins can manage food items and customer orders.
-
 # 🍔 Online Food Ordering System
 A web-based Online Food Ordering System developed using **ASP.NET Core MVC**, **Entity Framework Core**, **SQLite**, and **Stripe Payment Integration**.
 
@@ -8,6 +5,25 @@ The application allows customers to browse food items, manage their shopping car
 
 ---
 
+## 🔐 Demo Login Credentials
+
+The application includes separate access levels for **User** and **Admin**. Both use the same login page.
+
+### 👤 User Account
+
+| Field | Credentials |
+|---|---|
+| Email | `test@gmail.com` |
+| Password | `1234` |
+
+### 🛠️ Admin Account
+
+| Field | Credentials |
+|---|---|
+| Email | `rifat@gmail.com` |
+| Password | `11223344` |
+
+> **Note:** These credentials are provided for demonstration and testing purposes only.
 ## 📌 Features
 
 ### 👤 Customer Features
