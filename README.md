@@ -1,7 +1,7 @@
 # 🍔 Online Food Ordering System
 A web-based Online Food Ordering System developed using **ASP.NET Core MVC**, **Entity Framework Core**, **SQLite**, and **Stripe Payment Integration**.
 
-The application allows customers to browse food items, manage their shopping cart, place orders, and make online payments. It also provides an admin panel for managing food items and customer orders.
+The application allows customers to browse food items, manage their shopping cart, place orders, and make online payments. It also provides an admin panel for managing food items and customer orders
 
 ---
 
