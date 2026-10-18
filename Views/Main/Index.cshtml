@@ -1,45 +1,171 @@
-﻿@model List<OnlineFoodOrdering.Models.FoodItem>
-@using Microsoft.AspNetCore.Http
-
+@model List<OnlineFoodOrdering.Models.FoodItem>
 @{
     Layout = "_Layout";
-    ViewData["Title"] = "Order Your Food";
-    int? isAdmin = Context.Session.GetInt32("IsAdmin");
+    ViewData["Title"] = "Gourmet Bites - Fresh Artisanal Food Ordering";
+    var currentSearch = ViewData["CurrentSearch"] as string;
+    var currentCategory = ViewData["CurrentCategory"] as string ?? "All";
 }
 
-<h2>Our Menu</h2>
+<!-- ================= HERO SECTION ================= -->
+<section class="hero-section">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-7">
+            <span class="hero-tagline">
+                <span>🔥</span> Handcrafted Culinary Magic
+            </span>
+            <h1 class="hero-title">
+                Artisanal Flavors <span>Delivered</span> to Your Table
+            </h1>
+            <p class="hero-desc">
+                From stone-baked Italian pizzas to flame-seared burgers and decadent desserts. Crafted fresh by passionate chefs, delivered piping hot to your doorstep.
+            </p>
+            <div class="d-flex flex-wrap gap-3">
+                <a href="#menuSection" class="btn-primary-custom">
+                    <span>🍽️</span> Explore Full Menu
+                </a>
+                <a href="/Main/Cart" class="btn-secondary-custom" onclick="if(window.openCartDrawer){window.openCartDrawer(); return false;}">
+                    <span>🛍️</span> Open Cart Drawer
+                </a>
+            </div>
+        </div>
 
-<div class="row">
-    @if (Model != null && Model.Count > 0)
-    {
-        foreach (var item in Model)
-        {
-            <div class="col-md-3 mb-4">
-                <div class="card h-100">
-                    <img src="@item.ImagePath"
-                         class="card-img-top"
-                         style="height:200px; object-fit:cover;" />
-
-                    <div class="card-body d-flex flex-column">
-                        <h5 class="card-title">@item.Name</h5>
-                        <p class="card-text">$@item.Price</p>
-
-                        @* SHOW ADD TO CART ONLY FOR NON-ADMIN *@
-                        @if (isAdmin != 1)
-                        {
-                            <a asp-action="AddToCart"
-                               asp-route-id="@item.FoodItemId"
-                               class="btn btn-primary mt-auto">
-                                Add to Cart
-                            </a>
-                        }
+        <div class="col-lg-5 text-center">
+            <div class="hero-image-wrapper">
+                <img src="/images/pizza.jpg" alt="Artisanal Pizza" class="hero-image" />
+                <div class="hero-floating-badge">
+                    <span class="badge-icon-fire">⭐</span>
+                    <div class="text-start">
+                        <div class="fw-bold text-dark" style="font-size: 0.95rem;">4.9 / 5.0 Rating</div>
+                        <small class="text-muted" style="font-size: 0.8rem;">Over 3,200+ local foodies</small>
                     </div>
                 </div>
             </div>
-        }
-    }
-    else
-    {
-        <p>No items available.</p>
-    }
+        </div>
+    </div>
+</section>
+
+<!-- ================= VALUE PROPOSITIONS ================= -->
+<div class="row g-3 mb-5">
+    <div class="col-md-4">
+        <div class="p-3 bg-white rounded-3 border border-subtle d-flex align-items-center gap-3 shadow-sm h-100">
+            <div style="font-size: 2rem;">⚡</div>
+            <div>
+                <h6 class="mb-1 fw-bold text-dark">Lightning Express Delivery</h6>
+                <small class="text-muted">Avg. delivery time under 30 minutes in thermal packs.</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="p-3 bg-white rounded-3 border border-subtle d-flex align-items-center gap-3 shadow-sm h-100">
+            <div style="font-size: 2rem;">🌿</div>
+            <div>
+                <h6 class="mb-1 fw-bold text-dark">100% Organic & Fresh</h6>
+                <small class="text-muted">Locally sourced produce and artisanal bakeries.</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="p-3 bg-white rounded-3 border border-subtle d-flex align-items-center gap-3 shadow-sm h-100">
+            <div style="font-size: 2rem;">🔒</div>
+            <div>
+                <h6 class="mb-1 fw-bold text-dark">Secure Flexible Payment</h6>
+                <small class="text-muted">Pay on arrival with Cash or instant card checkout via Stripe.</small>
+            </div>
+        </div>
+    </div>
 </div>
+
+<!-- ================= MENU SECTION ================= -->
+<section id="menuSection" class="pt-2">
+
+    <div class="d-flex flex-wrap justify-content-between align-items-end mb-4 gap-2">
+        <div>
+            <span class="text-uppercase fw-bold" style="color: var(--primary-color); font-size: 0.85rem; letter-spacing: 0.08em;">
+                Our Signature Dishes
+            </span>
+            <h2 class="mt-1 mb-0" style="font-size: 2.2rem;">Crafted For Every Craving</h2>
+        </div>
+
+        @if (!string.IsNullOrEmpty(currentSearch))
+        {
+            <div class="d-flex align-items-center gap-2">
+                <span class="text-muted">Showing results for: <strong>"@currentSearch"</strong></span>
+                <a asp-action="Index" class="btn btn-sm btn-outline-secondary">Clear Search</a>
+            </div>
+        }
+    </div>
+
+    <!-- Category Filter Pills -->
+    <div class="category-filter-wrapper">
+        <button type="button" class="cat-pill @(currentCategory == "All" ? "active" : "")" data-category="All">
+            <span>✨</span> All Delicacies
+        </button>
+        <button type="button" class="cat-pill @(currentCategory == "Burger" ? "active" : "")" data-category="Burger">
+            <span>🍔</span> Burgers
+        </button>
+        <button type="button" class="cat-pill @(currentCategory == "Pizza" ? "active" : "")" data-category="Pizza">
+            <span>🍕</span> Pizzas
+        </button>
+        <button type="button" class="cat-pill @(currentCategory == "Pasta" ? "active" : "")" data-category="Pasta">
+            <span>🍝</span> Pastas
+        </button>
+        <button type="button" class="cat-pill @(currentCategory == "Sandwich" ? "active" : "")" data-category="Sandwich">
+            <span>🥪</span> Sandwiches
+        </button>
+        <button type="button" class="cat-pill @(currentCategory == "Cake" || currentCategory == "Dessert" ? "active" : "")" data-category="Cake">
+            <span>🍰</span> Desserts & Cakes
+        </button>
+        <button type="button" class="cat-pill @(currentCategory == "Icecream" ? "active" : "")" data-category="Icecream">
+            <span>🍨</span> Ice Cream
+        </button>
+    </div>
+
+    <!-- Food Items Grid -->
+    <div class="row g-4" id="foodGrid">
+        @if (Model != null && Model.Count > 0)
+        {
+            foreach (var item in Model)
+            {
+                var imgSrc = !string.IsNullOrEmpty(item.ImagePath) ? item.ImagePath : "/images/burger.jpg";
+                <div class="col-12 col-sm-6 col-lg-3 food-card-col" data-category="@item.Name">
+                    <div class="food-card">
+                        
+                        <div class="food-card-img-wrapper">
+                            <img src="@imgSrc" alt="@item.Name" class="food-card-img" loading="lazy" />
+                            <div class="food-price-badge">
+                                $@item.Price.ToString("0.00")
+                            </div>
+                        </div>
+
+                        <div class="food-card-body">
+                            <h3 class="food-card-title">@item.Name</h3>
+                            <p class="food-card-desc">
+                                Freshly prepared upon order with premium culinary seasonings and rich artisanal sauces.
+                            </p>
+
+                            <div class="mt-auto pt-2">
+                                <button type="button" 
+                                        class="btn-primary-custom w-100 btn-add-cart" 
+                                        data-food-id="@item.FoodItemId"
+                                        aria-label="Add @item.Name to cart">
+                                    <span>🛒</span> Add to Cart
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12 text-center py-5">
+                <div style="font-size: 3.5rem;">🍽️</div>
+                <h4 class="mt-3 text-dark fw-bold">No dishes found</h4>
+                <p class="text-muted">We couldn't find any menu items matching your criteria. Try searching for burgers, pizza, or pasta!</p>
+                <a asp-action="Index" class="btn-primary-custom mt-2">View All Items</a>
+            </div>
+        }
+    </div>
+
+</section>

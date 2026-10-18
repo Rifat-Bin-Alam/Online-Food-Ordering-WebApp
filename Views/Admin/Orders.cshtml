@@ -1,102 +1,172 @@
-﻿@model List<OnlineFoodOrdering.Models.Order>
+@model List<OnlineFoodOrdering.Models.Order>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Order Management - Admin";
+    var selectedStatus = ViewData["SelectedStatus"]?.ToString() ?? "";
+    var sortOrder = ViewData["SortOrder"]?.ToString() ?? "desc";
+}
 
-<h2>All Orders</h2>
+<div class="py-2">
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+        <div>
+            <div class="d-flex align-items-center gap-2">
+                <a asp-action="Index" class="text-muted text-decoration-none" style="font-size: 0.9rem;">← Back to Dashboard</a>
+            </div>
+            <h1 class="mb-0 mt-1" style="font-size: 2.2rem;">Order Management</h1>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="text-muted">Total: <strong>@Model.Count</strong> Orders</span>
+        </div>
+    </div>
 
-<!-- ================= Filter / Sort by Status ================= -->
-<form method="get" class="mb-3 d-flex align-items-center gap-2">
-    <label for="statusFilter">Filter by Status:</label>
-    <select id="statusFilter" name="status" class="form-select w-auto d-inline-block">
-        <option value="">All</option>
-        <option value="Processing" selected="@(ViewData["SelectedStatus"]?.ToString() == "Processing")">Processing</option>
-        <option value="Confirmed" selected="@(ViewData["SelectedStatus"]?.ToString() == "Confirmed")">Confirmed</option>
-        <option value="Delivered" selected="@(ViewData["SelectedStatus"]?.ToString() == "Delivered")">Delivered</option>
-    </select>
+    <!-- Filter & Sort Bar -->
+    <div class="card p-3 border border-subtle rounded-3 bg-white shadow-sm mb-4">
+        <form method="get" class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <!-- Status Pills -->
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <span class="text-muted fw-bold me-1" style="font-size: 0.88rem;">Filter:</span>
+                <a href="@Url.Action("Orders", new { status = "", sortOrder = sortOrder })" 
+                   class="btn btn-sm @(string.IsNullOrEmpty(selectedStatus) ? "btn-danger" : "btn-outline-secondary") rounded-pill px-3">
+                    All Orders
+                </a>
+                <a href="@Url.Action("Orders", new { status = "Processing", sortOrder = sortOrder })" 
+                   class="btn btn-sm @(selectedStatus == "Processing" ? "btn-warning" : "btn-outline-secondary") rounded-pill px-3">
+                    ⏳ Processing
+                </a>
+                <a href="@Url.Action("Orders", new { status = "Confirmed", sortOrder = sortOrder })" 
+                   class="btn btn-sm @(selectedStatus == "Confirmed" ? "btn-primary" : "btn-outline-secondary") rounded-pill px-3">
+                    🍳 Confirmed
+                </a>
+                <a href="@Url.Action("Orders", new { status = "Delivered", sortOrder = sortOrder })" 
+                   class="btn btn-sm @(selectedStatus == "Delivered" ? "btn-success" : "btn-outline-secondary") rounded-pill px-3">
+                    ✓ Delivered
+                </a>
+            </div>
 
-    <input type="hidden" name="sortOrder" value="@(ViewData["SortOrder"]?.ToString() ?? "desc")" />
+            <!-- Sort By OrderId -->
+            <div class="d-flex align-items-center gap-2">
+                <span class="text-muted fw-bold me-1" style="font-size: 0.88rem;">Sort:</span>
+                <a href="@Url.Action("Orders", new { status = selectedStatus, sortOrder = "desc" })" 
+                   class="btn btn-sm @(sortOrder == "desc" ? "btn-dark" : "btn-outline-secondary") rounded-pill px-3">
+                    Newest First (↓)
+                </a>
+                <a href="@Url.Action("Orders", new { status = selectedStatus, sortOrder = "asc" })" 
+                   class="btn btn-sm @(sortOrder == "asc" ? "btn-dark" : "btn-outline-secondary") rounded-pill px-3">
+                    Oldest First (↑)
+                </a>
+            </div>
+        </form>
+    </div>
 
-    <button type="submit" class="btn btn-primary">Filter</button>
+    <!-- Orders Table -->
+    @if (Model == null || Model.Count == 0)
+    {
+        <div class="card p-5 text-center border border-subtle bg-white rounded-3 shadow-sm">
+            <div style="font-size: 3rem;">📦</div>
+            <h4 class="mt-3 fw-bold text-dark">No orders found</h4>
+            <p class="text-muted">There are no customer orders matching the current filter criteria.</p>
+            <div>
+                <a asp-action="Orders" class="btn-secondary-custom">Reset Filters</a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card border border-subtle rounded-3 shadow-sm bg-white overflow-hidden">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="min-width: 90px;">Order</th>
+                            <th>Customer & Address</th>
+                            <th style="min-width: 220px;">Dishes Ordered</th>
+                            <th>Payment</th>
+                            <th>Status</th>
+                            <th>Timestamp</th>
+                            <th style="min-width: 170px;" class="text-end">Update Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var order in Model)
+                        {
+                            var total = order.OrderItems.Sum(oi => (oi.FoodItem?.Price ?? 0) * oi.Quantity);
+                            var statusClass = order.Status.ToLower() switch
+                            {
+                                "processing" => "processing",
+                                "confirmed" => "confirmed",
+                                "delivered" => "delivered",
+                                _ => "processing"
+                            };
 
-    <!-- Sort buttons for ascending/descending -->
-    <a href="@Url.Action("Orders", new { status = ViewData["SelectedStatus"], sortOrder = "asc" })" class="btn btn-secondary ms-2">
-        OrderId ↑
-    </a>
-    <a href="@Url.Action("Orders", new { status = ViewData["SelectedStatus"], sortOrder = "desc" })" class="btn btn-secondary">
-        OrderId ↓
-    </a>
-</form>
+                            <tr>
+                                <td>
+                                    <span class="badge bg-light text-dark border fw-bold fs-6">
+                                        #@order.OrderId
+                                    </span>
+                                    <div class="fw-bold text-dark mt-1" style="font-size: 0.95rem;">
+                                        $@total.ToString("0.00")
+                                    </div>
+                                </td>
 
-<table class="table table-bordered table-striped">
-    <thead class="table-dark">
-        <tr>
-            <th>Order Id</th>
-            <th>Customer</th>
-            <th>Food</th>
-            <th>Qty</th>
-            <th>Price</th>
-            <th>Address</th>
-            <th>Phone</th>
-            <th>Payment</th>
-            <th>Status</th>
-            <th>Order Date/Time</th>
-            <th>Update</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var order in Model)
-        {
-            <tr>
-                <td>@order.OrderId</td>
-                <td>@(!string.IsNullOrEmpty(order.CustomerName) ? order.CustomerName : order.User?.FullName ?? "Unknown")</td>
-                <td>
-                    @foreach (var item in order.OrderItems)
-                    {
-                        <div>@(item.FoodItem?.Name ?? "N/A")</div>
-                    }
-                </td>
-                <td>
-                    @foreach (var item in order.OrderItems)
-                    {
-                        <div>@item.Quantity</div>
-                    }
-                </td>
-                <td>
-                    @foreach (var item in order.OrderItems)
-                    {
-                        <div>$@((item.FoodItem?.Price ?? 0) * item.Quantity)</div>
-                    }
-                </td>
-                <td>@(!string.IsNullOrEmpty(order.Address) ? order.Address : "N/A")</td>
-                <td>@(!string.IsNullOrEmpty(order.PhoneNumber) ? order.PhoneNumber : "N/A")</td>
-                <td>@(!string.IsNullOrEmpty(order.PaymentMethod) ? order.PaymentMethod : "N/A")</td>
-                <td>
-                    <span class="badge @(order.Status == "Processing" ? "bg-warning" :
-                                                                   order.Status == "Confirmed" ? "bg-primary" :
-                                                                   "bg-success")">
-                        @order.Status
-                    </span>
-                </td>
-                <td>@order.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
-                <td>
-                    <form asp-controller="Admin" asp-action="UpdateOrderStatus" method="post">
-                        <input type="hidden" name="id" value="@order.OrderId" />
-                        <select name="status" class="form-select form-select-sm mb-1">
-                            <a href="d:\iubat\csc 440\project\onlinefoodordering\models\cartitem.cs">d:\iubat\csc 440\project\onlinefoodordering\models\cartitem.cs</a>
-                            <option value="Processing" selected="@(order.Status == "Processing")">Processing</option>
-                            <option value="Confirmed" selected="@(order.Status == "Confirmed")">Confirmed</option>
-                            <option value="Delivered" selected="@(order.Status == "Delivered")">Delivered</option>
-                        </select>
-                        <button type="submit" class="btn btn-sm btn-primary w-100">Update</button>
-                    </form>
-                </td>
-            </tr>
+                                <td>
+                                    <div class="fw-bold text-dark">@order.CustomerName</div>
+                                    <div class="text-muted small">📞 @order.PhoneNumber</div>
+                                    <div class="text-muted small text-truncate" style="max-width: 220px;" title="@order.Address">
+                                        📍 @order.Address
+                                    </div>
+                                </td>
 
-            <!-- Total Price Row -->
-            <tr class="table-secondary">
-                <td colspan="5" class="text-end"><strong>Total:</strong></td>
-                <td colspan="6">
-                    $@order.OrderItems.Sum(i => (i.FoodItem?.Price ?? 0) * i.Quantity)
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+                                <td>
+                                    @foreach (var item in order.OrderItems)
+                                    {
+                                        <div class="d-flex align-items-center justify-content-between py-1 border-bottom border-light">
+                                            <span class="small fw-semibold text-dark">
+                                                @(item.FoodItem?.Name ?? "Item") &times; @item.Quantity
+                                            </span>
+                                            <span class="small text-muted">
+                                                $@(((item.FoodItem?.Price ?? 0) * item.Quantity).ToString("0.00"))
+                                            </span>
+                                        </div>
+                                    }
+                                </td>
+
+                                <td>
+                                    <span class="badge bg-light text-dark border">
+                                        @order.PaymentMethod
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="status-pill @statusClass">
+                                        @order.Status
+                                    </span>
+                                </td>
+
+                                <td class="text-muted small">
+                                    @order.OrderDate.ToString("MMM dd, yyyy")<br />
+                                    @order.OrderDate.ToString("hh:mm tt")
+                                </td>
+
+                                <td class="text-end">
+                                    <form asp-controller="Admin" asp-action="UpdateOrderStatus" method="post" class="d-inline-flex flex-column gap-1 w-100">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@order.OrderId" />
+                                        <select name="status" class="form-select form-select-sm">
+                                            <option value="Processing" selected="@(order.Status == "Processing")">⏳ Processing</option>
+                                            <option value="Confirmed" selected="@(order.Status == "Confirmed")">🍳 Confirmed</option>
+                                            <option value="Delivered" selected="@(order.Status == "Delivered")">✓ Delivered</option>
+                                        </select>
+                                        <button type="submit" class="btn btn-sm btn-primary-custom w-100 py-1" style="font-size: 0.8rem;">
+                                            Update
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>

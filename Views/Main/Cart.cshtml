@@ -1,64 +1,150 @@
-﻿@model List<OnlineFoodOrdering.Models.CartItem>
-
+@model List<OnlineFoodOrdering.Models.CartItem>
 @{
-    decimal totalPrice = Model.Sum(i => i.Price * i.Quantity);
+    Layout = "_Layout";
+    ViewData["Title"] = "Your Shopping Cart - Gourmet Bites";
+    decimal totalPrice = Model?.Sum(i => i.Price * i.Quantity) ?? 0;
 }
 
-<h2>Your Cart</h2>
-
-@if (Model.Count == 0)
-{
-    <p>Your cart is empty.</p>
-}
-else
-{
-    <table class="table table-bordered">
-        <thead class="table-dark">
-            <tr>
-                <th>Food</th>
-                <th>Price</th>
-                <th>Quantity</th>
-                <th>Total</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            @foreach (var item in Model)
-            {
-                <tr>
-                    <td>@item.Name</td>
-                    <td>$@item.Price</td>
-                    <td>@item.Quantity</td>
-                    <td>$@(item.Price* item.Quantity)</td>
-                    <td>
-                        <a asp-action="RemoveFromCart"
-                           asp-route-id="@item.FoodItemId"
-                           class="btn btn-danger btn-sm">
-                            Remove
-                        </a>
-                    </td>
-                </tr>
-            }
-        </tbody>
-
-        <!-- TOTAL PRICE ROW -->
-        <tfoot>
-            <tr class="table-secondary fw-bold">
-                <td colspan="3" class="text-end">Grand Total</td>
-                <td colspan="2">$@totalPrice</td>
-            </tr>
-        </tfoot>
-    </table>
-
-    <div class="d-flex justify-content-end gap-2">
-        <a asp-action="Index" class="btn btn-secondary">
-            Add More Items
-        </a>
-
-        <a asp-action="Checkout" class="btn btn-success">
-            Proceed to Checkout
+<div class="py-2">
+    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+        <div>
+            <h1 class="mb-1" style="font-size: 2.2rem;">Your Culinary Cart</h1>
+            <p class="text-muted mb-0">Review your selected items before proceeding to fresh kitchen preparation.</p>
+        </div>
+        <a asp-action="Index" class="btn-secondary-custom">
+            <span>←</span> Continue Ordering
         </a>
     </div>
 
-}
+    @if (Model == null || Model.Count == 0)
+    {
+        <div class="card p-5 text-center border border-subtle bg-white rounded-3 shadow-sm my-4">
+            <div style="font-size: 4rem;">🛒</div>
+            <h3 class="mt-3 fw-bold text-dark">Your Cart is Currently Empty</h3>
+            <p class="text-muted mx-auto" style="max-width: 440px;">
+                You haven't added any dishes to your order yet. Take a tour of our artisanal menu and treat yourself to something delicious!
+            </p>
+            <div class="mt-3">
+                <a asp-action="Index" class="btn-primary-custom px-4 py-2">
+                    <span>🍽️</span> Explore Our Menu
+                </a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            <!-- Left Col: Cart Items Table -->
+            <div class="col-md-7 col-lg-8">
+                <div class="cart-table-wrapper" id="fullCartTable">
+                    <div class="table-responsive">
+                        <table class="cart-table">
+                            <thead>
+                                <tr>
+                                    <th>Dish</th>
+                                    <th>Price</th>
+                                    <th style="min-width: 140px;">Quantity</th>
+                                    <th>Total</th>
+                                    <th class="text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model)
+                                {
+                                    var itemSubtotal = item.Price * item.Quantity;
+                                    var img = !string.IsNullOrEmpty(item.ImagePath) ? item.ImagePath : "/images/burger.jpg";
+                                    <tr id="cart-row-@item.FoodItemId">
+                                        <td>
+                                            <div class="d-flex align-items-center gap-3">
+                                                <img src="@img" alt="@item.Name" style="width: 60px; height: 60px; border-radius: 10px; object-fit: cover; border: 1px solid var(--border-subtle);" />
+                                                <div>
+                                                    <h6 class="mb-0 fw-bold text-dark">@item.Name</h6>
+                                                    <small class="text-muted">Kitchen fresh</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="fw-semibold text-dark">
+                                            $@item.Price.ToString("0.00")
+                                        </td>
+                                        <td>
+                                            <div class="qty-stepper">
+                                                <button type="button" class="qty-btn" onclick="updateItemQuantity(@item.FoodItemId, -1)" aria-label="Decrease quantity">−</button>
+                                                <span class="qty-val page-cart-qty">@item.Quantity</span>
+                                                <button type="button" class="qty-btn" onclick="updateItemQuantity(@item.FoodItemId, 1)" aria-label="Increase quantity">+</button>
+                                            </div>
+                                        </td>
+                                        <td class="fw-bold text-dark page-cart-item-total">
+                                            $@itemSubtotal.ToString("0.00")
+                                        </td>
+                                        <td class="text-end">
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-outline-danger" 
+                                                    onclick="removeCartItem(@item.FoodItemId)" 
+                                                    title="Remove item" 
+                                                    aria-label="Remove @item.Name from cart">
+                                                <span>🗑</span>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="p-3 bg-white rounded-3 border border-subtle mt-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div class="d-flex align-items-center gap-2 text-muted">
+                        <span>💡</span>
+                        <small>Need to add more sides, drinks, or desserts?</small>
+                    </div>
+                    <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
+                        Browse More Dishes
+                    </a>
+                </div>
+            </div>
+
+            <!-- Right Col: Sticky Summary -->
+            <div class="col-md-5 col-lg-4">
+                <div class="order-summary-card">
+                    <h4 class="summary-title">Order Summary</h4>
+
+                    <div class="summary-row">
+                        <span>Items Subtotal:</span>
+                        <span id="fullCartGrandTotal" class="fw-bold text-dark">$@totalPrice.ToString("0.00")</span>
+                    </div>
+
+                    <div class="summary-row">
+                        <span>Express Delivery:</span>
+                        <span class="text-success fw-semibold">FREE</span>
+                    </div>
+
+                    <div class="summary-row">
+                        <span>Packaging & Eco Tax:</span>
+                        <span class="text-muted">$0.00</span>
+                    </div>
+
+                    <div class="summary-row total">
+                        <span>Total Due:</span>
+                        <span id="fullCartSummaryTotal">$@totalPrice.ToString("0.00")</span>
+                    </div>
+
+                    <div class="drawer-delivery-note mt-3">
+                        <span>🚚</span> Guaranteed hot thermal packaging upon delivery!
+                    </div>
+
+                    <div class="mt-4">
+                        <a asp-action="Checkout" class="btn-primary-custom w-100 py-3 text-center">
+                            <span>💳</span> Proceed to Checkout ➔
+                        </a>
+                    </div>
+
+                    <div class="text-center mt-3">
+                        <small class="text-muted d-flex align-items-center justify-content-center gap-2">
+                            <span>🔒</span> 100% Encrypted & Safe Checkout
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

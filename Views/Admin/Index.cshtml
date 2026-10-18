@@ -1,41 +1,206 @@
-﻿@{
-    ViewData["Title"] = "Admin Dashboard";
+@model List<OnlineFoodOrdering.Models.Order>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Admin Dashboard - Gourmet Bites";
+    var totalOrders = ViewBag.TotalOrders ?? 0;
+    var processingOrders = ViewBag.ProcessingOrders ?? 0;
+    var confirmedOrders = ViewBag.ConfirmedOrders ?? 0;
+    var deliveredOrders = ViewBag.DeliveredOrders ?? 0;
+    var totalFoodItems = ViewBag.TotalFoodItems ?? 0;
+    decimal totalRevenue = ViewBag.TotalRevenue ?? 0m;
 }
 
-<div class="container mt-4">
-    <h2 class="mb-4">Admin Dashboard</h2>
+<div class="py-2">
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+        <div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 fw-bold">Admin Portal</span>
+                <span class="text-muted" style="font-size: 0.85rem;">• Real-time Operations</span>
+            </div>
+            <h1 class="mb-0 mt-1" style="font-size: 2.2rem;">Kitchen & Sales Overview</h1>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="AddFood" class="btn-primary-custom">
+                <span>➕</span> Add Menu Item
+            </a>
+            <a asp-action="Orders" class="btn-secondary-custom">
+                <span>📦</span> All Orders
+            </a>
+        </div>
+    </div>
 
-    <div class="row g-3">
+    <!-- Metric Tiles Grid -->
+    <div class="row g-3 mb-4">
+        <!-- Total Revenue -->
+        <div class="col-sm-6 col-lg-3">
+            <div class="admin-stat-card">
+                <div class="admin-stat-icon" style="background: #E8F5E9; color: var(--accent-basil);">
+                    💵
+                </div>
+                <div>
+                    <h3 class="admin-stat-val">$@totalRevenue.ToString("0.00")</h3>
+                    <p class="admin-stat-label">Total Revenue</p>
+                </div>
+            </div>
+        </div>
 
-        <!-- View Orders -->
+        <!-- Total Orders -->
+        <div class="col-sm-6 col-lg-3">
+            <div class="admin-stat-card">
+                <div class="admin-stat-icon" style="background: var(--primary-subtle); color: var(--primary-color);">
+                    📦
+                </div>
+                <div>
+                    <h3 class="admin-stat-val">@totalOrders</h3>
+                    <p class="admin-stat-label">Total Orders Placed</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Processing Orders -->
+        <div class="col-sm-6 col-lg-3">
+            <div class="admin-stat-card">
+                <div class="admin-stat-icon" style="background: var(--accent-amber-subtle); color: var(--accent-amber);">
+                    ⏳
+                </div>
+                <div>
+                    <h3 class="admin-stat-val">@processingOrders</h3>
+                    <p class="admin-stat-label">Kitchen Preparing</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Menu Items Count -->
+        <div class="col-sm-6 col-lg-3">
+            <div class="admin-stat-card">
+                <div class="admin-stat-icon" style="background: #EFF6FF; color: var(--accent-blue);">
+                    🍔
+                </div>
+                <div>
+                    <h3 class="admin-stat-val">@totalFoodItems</h3>
+                    <p class="admin-stat-label">Menu Items Live</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Action Navigation Cards -->
+    <div class="row g-4 mb-4">
         <div class="col-md-6">
-            <div class="card shadow-sm h-100">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Orders</h5>
-                    <p class="card-text">
-                        View and manage all customer orders.
+            <div class="card p-4 border border-subtle rounded-3 shadow-sm bg-white h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span style="font-size: 1.5rem;">📦</span>
+                        <h4 class="mb-0 fw-bold text-dark">Live Order Dispatch</h4>
+                    </div>
+                    <p class="text-muted" style="font-size: 0.95rem;">
+                        View pending orders, update delivery pipeline statuses, inspect customer addresses, and notify customers automatically.
                     </p>
-                    <a asp-action="Orders" class="btn btn-primary w-100">
-                        View Orders
+                </div>
+                <div>
+                    <a asp-action="Orders" class="btn-primary-custom w-100 text-center">
+                        Manage Orders (@processingOrders Pending) ➔
                     </a>
                 </div>
             </div>
         </div>
 
-        <!-- Add Food -->
         <div class="col-md-6">
-            <div class="card shadow-sm h-100">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Food Management</h5>
-                    <p class="card-text">
-                        Add new food items to the menu.
+            <div class="card p-4 border border-subtle rounded-3 shadow-sm bg-white h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span style="font-size: 1.5rem;">🍽️</span>
+                        <h4 class="mb-0 fw-bold text-dark">Menu & Food Catalog</h4>
+                    </div>
+                    <p class="text-muted" style="font-size: 0.95rem;">
+                        Add new appetizing dishes, update pricing, upload high-resolution food photography, and maintain inventory.
                     </p>
-                    <a asp-action="AddFood" class="btn btn-success w-100">
-                        Add New Food Item
+                </div>
+                <div class="d-flex gap-2">
+                    <a asp-action="FoodList" class="btn-secondary-custom flex-grow-1 text-center">
+                        Browse Catalog
+                    </a>
+                    <a asp-action="AddFood" class="btn-primary-custom flex-grow-1 text-center">
+                        + Add New Dish
                     </a>
                 </div>
             </div>
         </div>
+    </div>
 
+    <!-- Recent Orders Section -->
+    <div class="card border border-subtle rounded-3 shadow-sm bg-white overflow-hidden">
+        <div class="card-header bg-white py-3 px-4 d-flex justify-content-between align-items-center border-bottom border-subtle">
+            <h5 class="mb-0 fw-bold text-dark">Recent Incoming Orders</h5>
+            <a asp-action="Orders" class="btn btn-sm btn-outline-danger">View All</a>
+        </div>
+        <div class="card-body p-0">
+            @if (Model != null && Model.Count > 0)
+            {
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Customer</th>
+                                <th>Items</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th>Date/Time</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var o in Model)
+                            {
+                                var total = o.OrderItems.Sum(oi => (oi.FoodItem?.Price ?? 0) * oi.Quantity);
+                                var statusClass = o.Status.ToLower() switch
+                                {
+                                    "processing" => "processing",
+                                    "confirmed" => "confirmed",
+                                    "delivered" => "delivered",
+                                    _ => "processing"
+                                };
+
+                                <tr>
+                                    <td class="fw-bold">#@o.OrderId</td>
+                                    <td>
+                                        <div class="fw-semibold text-dark">@o.CustomerName</div>
+                                        <small class="text-muted">@o.PhoneNumber</small>
+                                    </td>
+                                    <td>
+                                        @foreach (var item in o.OrderItems)
+                                        {
+                                            <span class="badge bg-light text-dark border me-1">
+                                                @(item.FoodItem?.Name ?? "Item") &times; @item.Quantity
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="fw-bold text-dark">$@total.ToString("0.00")</td>
+                                    <td>
+                                        <span class="status-pill @statusClass">@o.Status</span>
+                                    </td>
+                                    <td class="text-muted" style="font-size: 0.85rem;">
+                                        @o.OrderDate.ToString("MMM dd, hh:mm tt")
+                                    </td>
+                                    <td class="text-end">
+                                        <a asp-action="Orders" class="btn btn-sm btn-outline-secondary">
+                                            Details
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="p-4 text-center text-muted">
+                    No orders recorded yet.
+                </div>
+            }
+        </div>
     </div>
 </div>

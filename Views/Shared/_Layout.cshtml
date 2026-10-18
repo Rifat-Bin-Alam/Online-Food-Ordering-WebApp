@@ -1,7 +1,18 @@
-﻿@using Microsoft.AspNetCore.Http
+@using Microsoft.AspNetCore.Http
 @{
     var userName = Context.Session.GetString("UserName");
     int? isAdmin = Context.Session.GetInt32("IsAdmin");
+    var sessionCartJson = Context.Session.GetString("Cart");
+    int initialCartCount = 0;
+    if (!string.IsNullOrEmpty(sessionCartJson))
+    {
+        try
+        {
+            var cartList = Newtonsoft.Json.JsonConvert.DeserializeObject<List<OnlineFoodOrdering.Models.CartItem>>(sessionCartJson);
+            initialCartCount = cartList?.Sum(i => i.Quantity) ?? 0;
+        }
+        catch { }
+    }
 }
 
 <!DOCTYPE html>
@@ -9,150 +20,405 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - OnlineFoodOrdering</title>
+    <title>@ViewData["Title"] - Gourmet Bites | Online Food Ordering</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 CSS & App Design System -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/OnlineFoodOrdering.styles.css" asp-append-version="true" />
 </head>
 <body>
 
-    <header>
-        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-            <div class="container-fluid">
+    <!-- ================= NAVBAR ================= -->
+    <header class="site-header sticky-top">
+        <nav class="navbar navbar-expand-lg site-navbar">
+            <div class="container navbar-container">
 
-                <!-- Brand -->
-                <a class="navbar-brand fw-bold" asp-controller="Main" asp-action="Index">
-                    Order Your Food
+                <!-- Brand Logo & Name (Always on Left) -->
+                <a class="brand-wrapper" asp-controller="Main" asp-action="Index">
+                    <div class="brand-icon">🍽</div>
+                    <div class="brand-text-group">
+                        <span class="brand-name">Gourmet Bites</span>
+                        <span class="brand-subtitle">Artisanal Food Ordering</span>
+                    </div>
                 </a>
 
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-
-                <div class="collapse navbar-collapse" id="navbarContent">
-
-                    <!-- LEFT SIDE: Search & My Orders (Users only) -->
-                    <ul class="navbar-nav me-auto align-items-center">
-                        @if (isAdmin != 1)
+                <!-- Top Bar Action Controls: Notification, Cart, Desktop Auth, Mobile Hamburger -->
+                <div class="navbar-actions d-flex align-items-center gap-2">
+                    @if (isAdmin != 1)
+                    {
+                        @if (!string.IsNullOrEmpty(userName))
                         {
-                            <li class="nav-item me-3">
-                                <form class="d-flex" method="get" asp-controller="Main" asp-action="Index">
-                                    <input class="form-control me-2" type="search" name="search" placeholder="Search food" />
-                                    <button class="btn btn-outline-light" type="submit">Search</button>
-                                </form>
-                            </li>
+                            <!-- Notification Bell Dropdown (Always visible on mobile & desktop) -->
+                            <div class="dropdown">
+                                <a class="nav-icon-btn position-relative" href="#" id="notificationBell" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="Notifications" aria-label="Notifications">
+                                    🔔
+                                    <span class="badge-count" id="notificationBadge" style="@(ViewBag.NotificationCount > 0 ? "" : "display:none;")">
+                                        @(ViewBag.NotificationCount ?? 0)
+                                    </span>
+                                </a>
 
-                            @if (!string.IsNullOrEmpty(userName))
-                            {
-                                <li class="nav-item me-3">
-                                    <a class="nav-link" asp-controller="Main" asp-action="MyOrders">My Orders</a>
-                                </li>
-
-                                <!-- Notification Bell -->
-                                <li class="nav-item dropdown me-3">
-                                    <a class="nav-link position-relative" href="#" role="button" data-bs-toggle="dropdown">
-                                        🔔
+                                <div class="dropdown-menu dropdown-menu-end notification-dropdown shadow-lg border-0" aria-labelledby="notificationBell">
+                                    <div class="notification-header">
+                                        <h6 class="notification-title">Notifications</h6>
                                         @if (ViewBag.NotificationCount > 0)
                                         {
-                                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                                @ViewBag.NotificationCount
-                                            </span>
+                                            <button type="button" class="btn-mark-all" id="btnMarkAllNotifications">Mark all read</button>
                                         }
-                                    </a>
-                                    <ul class="dropdown-menu dropdown-menu-end" style="width: 300px;">
+                                    </div>
+
+                                    <ul class="notification-list" id="notificationList">
                                         @if (ViewBag.Notifications != null && ViewBag.Notifications.Count > 0)
                                         {
                                             foreach (var n in ViewBag.Notifications)
                                             {
-                                                <li>
-                                                    <a class="dropdown-item small" asp-action="MarkNotificationRead" asp-route-id="@n.Id">
-                                                        @n.Message <br />
-                                                        <span class="text-muted">@n.CreatedAt.ToString("g")</span>
-                                                    </a>
+                                                <li class="notification-item @(n.IsRead ? "read" : "unread")" id="notif-item-@n.Id">
+                                                    <span class="notification-dot"></span>
+                                                    <div class="notification-content">
+                                                        <p class="notification-msg">
+                                                            <a asp-controller="Main" asp-action="MarkNotificationRead" asp-route-id="@n.Id" class="text-decoration-none text-dark" onclick="window.markSingleNotificationRead(@n.Id, event)">
+                                                                @n.Message
+                                                            </a>
+                                                        </p>
+                                                        <span class="notification-time">@n.CreatedAt.ToString("MMM dd, hh:mm tt")</span>
+                                                    </div>
                                                 </li>
-                                                <li><hr class="dropdown-divider" /></li>
                                             }
                                         }
                                         else
                                         {
-                                            <li class="dropdown-item text-muted">No notifications</li>
+                                            <li class="notification-empty">
+                                                <div>🎉</div>
+                                                <span>You're all caught up! No new notifications.</span>
+                                            </li>
                                         }
                                     </ul>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Shopping Cart Trigger Button (Always visible on mobile & desktop) -->
+                        <a class="nav-icon-btn position-relative" href="/Main/Cart" id="cartDrawerTrigger" title="View Shopping Cart" aria-label="View Shopping Cart">
+                            🛍️
+                            <span class="badge-count cart-badge" id="cartBadge" style="@(initialCartCount > 0 ? "" : "display:none;")">
+                                @initialCartCount
+                            </span>
+                        </a>
+                    }
+
+                    <!-- Desktop User Menu / Auth Buttons (Visible on desktop: d-none d-lg-flex) -->
+                    <div class="d-none d-lg-flex align-items-center gap-2 ms-lg-2">
+                        @if (string.IsNullOrEmpty(userName))
+                        {
+                            <a class="btn-secondary-custom" asp-controller="Account" asp-action="Login">
+                                Sign In
+                            </a>
+                            <a class="btn-primary-custom" asp-controller="Account" asp-action="Register">
+                                Register
+                            </a>
+                        }
+                        else
+                        {
+                            <div class="dropdown">
+                                <a class="user-avatar-btn dropdown-toggle" href="#" id="userMenuDesktop" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <span>👤</span>
+                                    <span>@userName</span>
+                                    @if (isAdmin == 1)
+                                    {
+                                        <span class="admin-tag">Admin</span>
+                                    }
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="userMenuDesktop">
+                                    @if (isAdmin == 1)
+                                    {
+                                        <li>
+                                            <a class="dropdown-item" asp-controller="Admin" asp-action="Index">Admin Dashboard</a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" asp-controller="Admin" asp-action="Orders">Manage Orders</a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" asp-controller="Admin" asp-action="FoodList">Food Catalog</a>
+                                        </li>
+                                        <li><hr class="dropdown-divider" /></li>
+                                    }
+                                    else
+                                    {
+                                        <li>
+                                            <a class="dropdown-item" asp-controller="Main" asp-action="MyOrders">Order History</a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" asp-controller="Main" asp-action="Cart">My Cart</a>
+                                        </li>
+                                        <li><hr class="dropdown-divider" /></li>
+                                    }
+                                    <li>
+                                        <a class="dropdown-item text-danger fw-semibold" asp-controller="Account" asp-action="Logout">Sign Out</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Mobile Hamburger Toggle Button (Visible on mobile/tablet: d-lg-none) -->
+                    <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                </div>
+
+                <!-- Collapsible Navigation (Contains Links, Search, and Mobile Auth) -->
+                <div class="collapse navbar-collapse mt-2 mt-lg-0" id="navbarContent">
+
+                    <!-- Navigation Links -->
+                    <ul class="navbar-nav me-auto align-items-lg-center gap-1 mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link-custom" asp-controller="Main" asp-action="Index">
+                                <span>📖</span> Menu
+                            </a>
+                        </li>
+
+                        @if (isAdmin == 1)
+                        {
+                            <!-- Admin Navigation Links -->
+                            <li class="nav-item">
+                                <a class="nav-link-custom" asp-controller="Admin" asp-action="Index">
+                                    <span>📊</span> Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link-custom" asp-controller="Admin" asp-action="Orders">
+                                    <span>📦</span> Orders
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link-custom" asp-controller="Admin" asp-action="FoodList">
+                                    <span>🍔</span> Manage Food
+                                </a>
+                            </li>
+                        }
+                        else
+                        {
+                            @if (!string.IsNullOrEmpty(userName))
+                            {
+                                <!-- Customer Orders Link -->
+                                <li class="nav-item">
+                                    <a class="nav-link-custom" asp-controller="Main" asp-action="MyOrders">
+                                        <span>📋</span> My Orders
+                                    </a>
                                 </li>
                             }
                         }
                     </ul>
 
-                    <!-- RIGHT SIDE: Admin / Cart / Login -->
-                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                        @if (isAdmin == 1)
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Admin" asp-action="Index">Admin Dashboard</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Admin" asp-action="FoodList">Food List</a>
-                            </li>
-                        }
-                        else
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Main" asp-action="Cart">Cart</a>
-                            </li>
-                        }
+                    <!-- Search Bar (Center on desktop, inside hamburger on mobile) -->
+                    @if (isAdmin != 1)
+                    {
+                        <div class="nav-search-container my-2 my-lg-0 me-lg-3">
+                            <form class="nav-search-form" method="get" asp-controller="Main" asp-action="Index">
+                                <input class="nav-search-input" type="search" name="search" placeholder="Search pizza, pasta, burgers..." value="@ViewData["CurrentSearch"]" aria-label="Search food items" />
+                                <button class="nav-search-btn" type="submit" title="Search" aria-label="Search">🔍</button>
+                            </form>
+                        </div>
+                    }
 
+                    <!-- Mobile-Only Account Section inside Hamburger (d-lg-none) -->
+                    <div class="mobile-auth-section d-lg-none border-top pt-3 mt-2">
                         @if (string.IsNullOrEmpty(userName))
                         {
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Account" asp-action="Login">Login</a>
-                            </li>
+                            <div class="d-grid gap-2">
+                                <a class="btn-secondary-custom text-center py-2" asp-controller="Account" asp-action="Login">
+                                    Sign In
+                                </a>
+                                <a class="btn-primary-custom text-center py-2" asp-controller="Account" asp-action="Register">
+                                    Create Account
+                                </a>
+                            </div>
                         }
                         else
                         {
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Account" asp-action="Logout">Logout (@userName)</a>
-                            </li>
+                            <div class="mobile-user-profile p-3 rounded-3 mb-2">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="fs-5">👤</span>
+                                        <div>
+                                            <div class="fw-bold text-dark">@userName</div>
+                                            <small class="text-muted">@(isAdmin == 1 ? "Administrator" : "Customer")</small>
+                                        </div>
+                                    </div>
+                                    @if (isAdmin == 1)
+                                    {
+                                        <span class="admin-tag">Admin</span>
+                                    }
+                                </div>
+                                <div class="d-grid gap-2 mt-2">
+                                    @if (isAdmin == 1)
+                                    {
+                                        <a class="btn-secondary-custom text-center py-2" asp-controller="Admin" asp-action="Index">Admin Dashboard</a>
+                                    }
+                                    else
+                                    {
+                                        <a class="btn-secondary-custom text-center py-2" asp-controller="Main" asp-action="MyOrders">My Orders History</a>
+                                    }
+                                    <a class="btn-secondary-custom text-danger text-center py-2" asp-controller="Account" asp-action="Logout">Sign Out</a>
+                                </div>
+                            </div>
                         }
-                    </ul>
+                    </div>
 
                 </div>
             </div>
         </nav>
-
-        <!-- TEMP MESSAGES -->
-        @if (TempData["OrderNotification"] != null)
-        {
-            <div class="alert alert-info text-center m-0">
-                🔔 @TempData["OrderNotification"]
-            </div>
-        }
-        @if (TempData["Success"] != null)
-        {
-            <div class="alert alert-success text-center m-0">
-                @TempData["Success"]
-            </div>
-        }
-        @if (TempData["Error"] != null)
-        {
-            <div class="alert alert-danger text-center m-0">
-                @TempData["Error"]
-            </div>
-        }
-
     </header>
 
-    <div class="container mt-4">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
+    <!-- ================= SLIDE-IN CART DRAWER ================= -->
+    <div class="cart-drawer-backdrop" id="cartDrawerBackdrop"></div>
+    <div class="cart-drawer" id="cartDrawer" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="cartDrawerTitle">
+        <div class="drawer-header">
+            <h4 class="drawer-title" id="cartDrawerTitle">
+                <span>🛍️</span> Your Order Cart
+            </h4>
+            <button type="button" class="drawer-close-btn" id="cartDrawerClose" aria-label="Close cart drawer">&times;</button>
+        </div>
+
+        <div class="drawer-body" id="cartDrawerItems">
+            <!-- Dynamic items rendered via site.js -->
+        </div>
+
+        <div class="drawer-footer" id="cartDrawerFooter" style="display:none;">
+            <div class="drawer-delivery-note">
+                <span>🚚</span> Free express delivery on orders over $30.00!
+            </div>
+            <div class="drawer-subtotal-row">
+                <span class="fw-bold">Estimated Total:</span>
+                <span class="drawer-total-amount" id="cartDrawerTotal">$0.00</span>
+            </div>
+            <div class="d-grid gap-2 mt-3">
+                <a asp-controller="Main" asp-action="Checkout" class="btn-primary-custom w-100">
+                    Proceed to Checkout ➔
+                </a>
+                <a asp-controller="Main" asp-action="Cart" class="btn-secondary-custom w-100 text-center">
+                    View Full Cart
+                </a>
+            </div>
+        </div>
     </div>
 
-    <footer class="border-top footer text-muted mt-4">
-        <div class="container text-center py-2">
-            OnlineFoodOrdering
+    <!-- Toast Notification Container -->
+    <div class="toast-container-custom" id="toastContainer"></div>
+
+    <!-- Flash Messages Rendered as Toasts -->
+    @if (TempData["Success"] != null)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                showToast("@TempData["Success"]", "success");
+            });
+        </script>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                showToast("@TempData["Error"]", "error");
+            });
+        </script>
+    }
+
+    <!-- ================= MAIN BODY ================= -->
+    <main role="main" class="app-container py-4">
+        <div class="container">
+            @RenderBody()
+        </div>
+    </main>
+
+    <!-- ================= SITE FOOTER ================= -->
+    <footer class="site-footer">
+        <div class="container">
+            <div class="row g-4 justify-content-between">
+
+                <!-- Col 1: Brand & About -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="footer-brand">🍽 Gourmet Bites</div>
+                    <p class="footer-desc">
+                        Handcrafted artisanal meals prepared fresh with locally sourced ingredients. Fast, reliable delivery straight from our kitchen to your table.
+                    </p>
+                    <div class="d-flex align-items-center gap-2 mt-3">
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">Open 10:00 AM – 11:00 PM</span>
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">⚡ 30m Avg Delivery</span>
+                    </div>
+                </div>
+
+                <!-- Col 2: Quick Links -->
+                <div class="col-lg-3 col-md-6">
+                    <h5 class="footer-heading">Quick Navigation</h5>
+                    <ul class="footer-links">
+                        <li><a class="footer-link" asp-controller="Main" asp-action="Index">Explore Menu</a></li>
+                        <li><a class="footer-link" asp-controller="Main" asp-action="Cart">Shopping Cart</a></li>
+                        <li><a class="footer-link" asp-controller="Main" asp-action="MyOrders">Order Tracking & History</a></li>
+                        @if (isAdmin == 1)
+                        {
+                            <li><a class="footer-link" asp-controller="Admin" asp-action="Index">Administrator Dashboard</a></li>
+                        }
+                    </ul>
+                </div>
+
+                <!-- Col 3: Developer Portfolio & GitHub (Required destinations) -->
+                <div class="col-lg-4 col-md-12">
+                    <h5 class="footer-heading">Project & Developer</h5>
+                    <p class="footer-desc" style="max-width: 100%;">
+                        Full-stack e-commerce solution architected with ASP.NET Core MVC, Entity Framework Core, SQLite, and Stripe.
+                    </p>
+                    <div class="d-flex flex-wrap gap-2 mt-3">
+                        <!-- GitHub Repository Link -->
+                        <a href="https://github.com/Rifat-Bin-Alam/Online-Food-Ordering-WebApp" 
+                           target="_blank" 
+                           rel="noopener noreferrer" 
+                           class="footer-badge-link"
+                           title="GitHub Repository (opens in new tab)">
+                            <span>💻</span> GitHub Repository
+                        </a>
+                        <!-- Developer Portfolio Link -->
+                        <a href="https://rifat-bin-alam.vercel.app/" 
+                           target="_blank" 
+                           rel="noopener noreferrer" 
+                           class="footer-badge-link"
+                           title="Developer Portfolio (opens in new tab)">
+                            <span>🌐</span> Developer Portfolio
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+
+            <hr class="footer-divider" />
+
+            <!-- Copyright and Security Badges -->
+            <div class="footer-bottom">
+                <div>
+                    &copy; @DateTime.Now.Year Rifat. All rights reserved.
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <span>💵 Cash on Delivery</span>
+                    <span>💳 Stripe Secure Payment</span>
+                    <span>🔒 256-bit SSL</span>
+                </div>
+            </div>
         </div>
     </footer>
 
+    <!-- ================= SCROLL TO TOP STICKY BUTTON ================= -->
+    <button type="button" class="btn-scroll-top" id="btnScrollTop" aria-label="Back to top" title="Back to top">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="12" y1="19" x2="12" y2="5"></line>
+            <polyline points="5 12 12 5 19 12"></polyline>
+        </svg>
+    </button>
+
+    <!-- Scripts -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

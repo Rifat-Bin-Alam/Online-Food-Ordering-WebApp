@@ -1,51 +1,79 @@
-﻿@model OnlineFoodOrdering.Models.User
-
+@model OnlineFoodOrdering.Models.User
 @{
     Layout = "_Layout";
-    ViewData["Title"] = "Register";
+    ViewData["Title"] = "Create Account - Gourmet Bites";
 }
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-5">
-            <div class="card shadow-sm p-4">
-                <h2 class="text-center mb-4">Register</h2>
+<div class="row justify-content-center align-items-center py-4 my-2">
+    <div class="col-lg-10">
+        <div class="card border border-subtle rounded-3 shadow-md overflow-hidden bg-white">
+            <div class="row g-0">
 
-                @if (TempData["Success"] != null)
-                {
-                    <div class="alert alert-success text-center">
-                        @TempData["Success"]
+                <!-- Left Visual Banner -->
+                <div class="col-md-5 d-none d-md-block position-relative" style="background: url('/images/burger.jpg') center/cover no-repeat; min-height: 520px;">
+                    <div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(35, 27, 24, 0.4) 0%, rgba(35, 27, 24, 0.85) 100%);"></div>
+                    <div class="position-absolute bottom-0 start-0 p-4 text-white">
+                        <span class="badge bg-danger mb-2 px-3 py-1 fw-bold">Join the Table</span>
+                        <h3 class="fw-bold text-white mb-1">Gourmet Quality Delivered</h3>
+                        <p class="text-white-50 mb-0" style="font-size: 0.9rem;">
+                            Get access to personalized order tracking and fast checkout.
+                        </p>
                     </div>
-                }
+                </div>
 
-                <form asp-action="Register" method="post">
-                    <div class="mb-3">
-                        <label asp-for="FullName" class="form-label">Full Name</label>
-                        <input asp-for="FullName" class="form-control" placeholder="Enter your full name" required />
+                <!-- Right Form Area -->
+                <div class="col-md-7 p-4 p-lg-5 d-flex flex-column justify-content-center">
+                    <div>
+                        <span class="text-uppercase fw-bold text-danger" style="font-size: 0.8rem; letter-spacing: 0.08em;">
+                            New Customer
+                        </span>
+                        <h2 class="fw-bold text-dark mt-1 mb-2">Create an Account</h2>
+                        <p class="text-muted mb-4" style="font-size: 0.95rem;">
+                            Fill in your details below to enjoy artisanal food delivered hot to your door.
+                        </p>
+
+                        <form asp-action="Register" method="post">
+                            @Html.AntiForgeryToken()
+
+                            <div class="mb-3">
+                                <label asp-for="FullName" class="form-label fw-semibold text-dark">Full Name <span class="text-danger">*</span></label>
+                                <input asp-for="FullName" class="form-control py-2" placeholder="e.g. Sarah Jenkins" required />
+                                <span asp-validation-for="FullName" class="text-danger small"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Email" class="form-label fw-semibold text-dark">Email Address <span class="text-danger">*</span></label>
+                                <input asp-for="Email" type="email" class="form-control py-2" placeholder="name@example.com" required />
+                                <span asp-validation-for="Email" class="text-danger small"></span>
+                            </div>
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-sm-6">
+                                    <label asp-for="Password" class="form-label fw-semibold text-dark">Password <span class="text-danger">*</span></label>
+                                    <input asp-for="Password" type="password" class="form-control py-2" placeholder="Create a password" required />
+                                    <span asp-validation-for="Password" class="text-danger small"></span>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label asp-for="PhoneNumber" class="form-label fw-semibold text-dark">Phone Number <span class="text-danger">*</span></label>
+                                    <input asp-for="PhoneNumber" type="tel" class="form-control py-2" placeholder="e.g. +1 555-0199" required />
+                                    <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <div class="d-grid mt-4">
+                                <button type="submit" class="btn-primary-custom py-3 text-center fs-6">
+                                    <span>✨</span> Register Account
+                                </button>
+                            </div>
+                        </form>
+
+                        <div class="text-center mt-4 pt-2 border-top border-light">
+                            <span class="text-muted" style="font-size: 0.92rem;">Already registered?</span>
+                            <a asp-action="Login" class="fw-bold text-danger text-decoration-none ms-1">Sign in here</a>
+                        </div>
                     </div>
+                </div>
 
-                    <div class="mb-3">
-                        <label asp-for="Email" class="form-label">Email</label>
-                        <input asp-for="Email" type="email" class="form-control" placeholder="Enter your email" required />
-                    </div>
-
-                    <div class="mb-3">
-                        <label asp-for="Password" class="form-label">Password</label>
-                        <input asp-for="Password" type="password" class="form-control" placeholder="Enter your password" required />
-                    </div>
-
-                    <div class="mb-3">
-                        <label asp-for="PhoneNumber" class="form-label">Phone Number</label>
-                        <input asp-for="PhoneNumber" class="form-control" placeholder="Enter your phone number" required />
-                    </div>
-
-                    <button type="submit" class="btn btn-success w-100">Register</button>
-                </form>
-
-                <p class="text-center mt-3">
-                    Already have an account?
-                    <a asp-controller="Account" asp-action="Login">Login here</a>
-                </p>
             </div>
         </div>
     </div>

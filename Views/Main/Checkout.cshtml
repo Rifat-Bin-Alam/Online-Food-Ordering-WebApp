@@ -1,124 +1,183 @@
-﻿@model List<OnlineFoodOrdering.Models.CartItem>
-
+@model List<OnlineFoodOrdering.Models.CartItem>
 @{
     Layout = "_Layout";
-    ViewData["Title"] = "Checkout";
-
-    decimal totalPrice = Model.Sum(i => i.Price * i.Quantity);
+    ViewData["Title"] = "Checkout - Gourmet Bites";
+    decimal totalPrice = Model?.Sum(i => i.Price * i.Quantity) ?? 0;
 }
 
-<div class="container mt-4">
-    <h2 class="mb-4">Checkout</h2>
+<div class="py-2">
+    <div class="mb-4">
+        <h1 class="mb-1" style="font-size: 2.2rem;">Complete Your Order</h1>
+        <p class="text-muted mb-0">Provide your delivery location and preferred payment method to begin preparation.</p>
+    </div>
 
-    @if (Model.Count == 0)
+    @if (Model == null || Model.Count == 0)
     {
-        <div class="alert alert-warning">
-            Your cart is empty.
+        <div class="alert alert-warning border-0 rounded-3 shadow-sm p-4">
+            <h5 class="fw-bold">Your cart is empty!</h5>
+            <p class="mb-3">Please add items to your cart before proceeding to checkout.</p>
+            <a asp-action="Index" class="btn-primary-custom">Return to Menu</a>
         </div>
     }
     else
     {
-        <!-- ================= ORDER SUMMARY ================= -->
-        <div class="card mb-4">
-            <div class="card-header bg-dark text-white">
-                Order Summary
+        <form asp-action="Checkout" method="post" id="checkoutForm">
+            @Html.AntiForgeryToken()
+
+            <div class="row g-4">
+
+                <!-- Left Column: Delivery & Payment Details -->
+                <div class="col-md-7 col-lg-7">
+
+                    <!-- Delivery Information -->
+                    <div class="card p-4 rounded-3 border border-subtle bg-white shadow-sm mb-4">
+                        <h4 class="mb-3 fw-bold text-dark d-flex align-items-center gap-2">
+                            <span>📍</span> Delivery Details
+                        </h4>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-dark">Full Name <span class="text-danger">*</span></label>
+                            <input type="text" name="customerName" class="form-control py-2" required placeholder="e.g. Alex Morgan" value="@ViewBag.CustomerName" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-dark">Phone Number <span class="text-danger">*</span></label>
+                            <input type="tel" name="phoneNumber" class="form-control py-2" required placeholder="e.g. +1 555-0199" value="@ViewBag.PhoneNumber" />
+                            <small class="text-muted">Our driver will contact you at this number upon arrival.</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-dark">Street Delivery Address <span class="text-danger">*</span></label>
+                            <textarea name="address" class="form-control" rows="3" required placeholder="Apartment / Suite, Building, Street Address, City, Postal Code"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Payment Method Selection -->
+                    <div class="card p-4 rounded-3 border border-subtle bg-white shadow-sm mb-4">
+                        <h4 class="mb-3 fw-bold text-dark d-flex align-items-center gap-2">
+                            <span>💳</span> Payment Method
+                        </h4>
+
+                        <div class="payment-methods-grid">
+                            <!-- Option 1: Cash On Delivery -->
+                            <label class="payment-card-label" for="payCOD">
+                                <input class="form-check-input payment-radio me-2" type="radio" name="paymentMethod" id="payCOD" value="Cash On Delivery" checked />
+                                <div class="payment-card-content">
+                                    <span class="payment-card-title">💵 Cash On Delivery</span>
+                                    <span class="payment-card-desc">Pay directly in cash or POS card when the delivery partner arrives.</span>
+                                </div>
+                            </label>
+
+                            <!-- Option 2: Stripe Online Card -->
+                            <label class="payment-card-label" for="payCard">
+                                <input class="form-check-input payment-radio me-2" type="radio" name="paymentMethod" id="payCard" value="Card" />
+                                <div class="payment-card-content">
+                                    <span class="payment-card-title">💳 Stripe Card Checkout</span>
+                                    <span class="payment-card-desc">Instant online card payment via Stripe Checkout portal.</span>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div id="stripeNote" class="p-3 rounded-3 border border-subtle mt-2" style="display: none; background: var(--bg-subtle);">
+                            <div class="d-flex align-items-center gap-2 text-primary fw-semibold mb-1">
+                                <span>🔒</span> Stripe Secure Payment Portal
+                            </div>
+                            <small class="text-muted">
+                                You will be directed to Stripe's secure checkout page to enter your card details. For testing in sandbox, use test card <code>4242 4242 4242 4242</code>.
+                            </small>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Right Column: Order Summary & Itemized Review -->
+                <div class="col-md-5 col-lg-5">
+                    <div class="order-summary-card">
+                        <h4 class="summary-title">Order Items (@Model.Sum(i => i.Quantity))</h4>
+
+                        <div class="mb-3" style="max-height: 280px; overflow-y: auto;">
+                            @foreach (var item in Model)
+                            {
+                                var img = !string.IsNullOrEmpty(item.ImagePath) ? item.ImagePath : "/images/burger.jpg";
+                                <div class="d-flex align-items-center justify-content-between py-2 border-bottom border-light">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <img src="@img" alt="@item.Name" style="width: 46px; height: 46px; border-radius: 8px; object-fit: cover;" />
+                                        <div>
+                                            <h6 class="mb-0 text-dark fw-bold" style="font-size: 0.92rem;">@item.Name</h6>
+                                            <small class="text-muted">Qty: @item.Quantity &times; $@item.Price.ToString("0.00")</small>
+                                        </div>
+                                    </div>
+                                    <span class="fw-bold text-dark">
+                                        $@((item.Price * item.Quantity).ToString("0.00"))
+                                    </span>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="summary-row">
+                            <span>Subtotal:</span>
+                            <span class="fw-bold text-dark">$@totalPrice.ToString("0.00")</span>
+                        </div>
+
+                        <div class="summary-row">
+                            <span>Express Thermal Delivery:</span>
+                            <span class="text-success fw-bold">FREE</span>
+                        </div>
+
+                        <div class="summary-row total">
+                            <span>Grand Total:</span>
+                            <span>$@totalPrice.ToString("0.00")</span>
+                        </div>
+
+                        <div class="p-3 rounded-3 mt-3 text-center border border-subtle" style="background: var(--bg-subtle);">
+                            <small class="text-muted d-block mb-1">Estimated Preparation & Delivery Time</small>
+                            <span class="fw-bold text-dark fs-6">⏱️ 25 – 35 Minutes</span>
+                        </div>
+
+                        <!-- Submit Button inside Order Summary -->
+                        <div class="d-grid mt-4">
+                            <button type="submit" id="btnPlaceOrder" class="btn-primary-custom py-3 text-center fs-5">
+                                <span id="btnOrderIcon">🛍️</span> <span id="btnOrderText">Place Order (Cash On Delivery)</span>
+                            </button>
+                        </div>
+
+                        <div class="text-center mt-3">
+                            <small class="text-muted d-flex align-items-center justify-content-center gap-1">
+                                <span>🔒</span> 256-bit Encrypted Checkout
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
             </div>
-
-            <div class="card-body p-0">
-                <table class="table mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Food</th>
-                            <th>Qty</th>
-                            <th>Price</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        @foreach (var item in Model)
-                        {
-                            <tr>
-                                <td>@item.Name</td>
-                                <td>@item.Quantity</td>
-                                <td>$@(item.Price* item.Quantity)</td>
-                            </tr>
-                        }
-                    </tbody>
-
-                    <tfoot>
-                        <tr class="table-dark">
-                            <th colspan="2" class="text-end">Total</th>
-                            <th>$@totalPrice</th>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-        </div>
-
-        <!-- ================= DELIVERY & PAYMENT ================= -->
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                Delivery & Payment
-            </div>
-
-            <div class="card-body">
-                <form asp-action="Checkout" method="post" id="checkout-form">
-
-                    <div class="mb-3">
-                        <label class="form-label">Name</label>
-                        <input name="customerName" class="form-control" required />
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Phone Number</label>
-                        <input name="phoneNumber" class="form-control" required />
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Address</label>
-                        <textarea name="address" class="form-control" rows="2" required></textarea>
-                    </div>
-
-                    <!-- PAYMENT METHOD -->
-                    <div class="mb-3">
-                        <label class="form-label">Payment Method</label>
-                        <select name="paymentMethod" id="paymentMethod" class="form-select" required>
-                            <option value="Cash On Delivery">Cash On Delivery</option>
-                            <option value="Card">Card Payment</option>
-                        </select>
-                    </div>
-
-                    <!-- STRIPE CARD INPUT -->
-                    <div id="card-section" class="mb-3" style="display:none;">
-                        <label class="form-label">Card Details</label>
-                        <div id="card-element" class="form-control p-2"></div>
-                        <small class="text-muted">
-                            Test card: 4242 4242 4242 4242
-                        </small>
-                    </div>
-
-                    <button type="submit" class="btn btn-success w-100">
-                        Place Order
-                    </button>
-                </form>
-            </div>
-        </div>
+        </form>
     }
 </div>
 
-<!-- ================= STRIPE JS ================= -->
-<script src="https://js.stripe.com/v3/"></script>
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const payCOD = document.getElementById("payCOD");
+            const payCard = document.getElementById("payCard");
+            const stripeNote = document.getElementById("stripeNote");
+            const btnOrderText = document.getElementById("btnOrderText");
+            const btnOrderIcon = document.getElementById("btnOrderIcon");
 
-<script>
-    const stripe = Stripe("@Context.RequestServices
-        .GetService<IConfiguration>()["Stripe:PublishableKey"]");
+            function updatePaymentState() {
+                if (payCard && payCard.checked) {
+                    if (stripeNote) stripeNote.style.display = "block";
+                    if (btnOrderText) btnOrderText.textContent = "Proceed to Stripe Payment ($@totalPrice.ToString("0.00"))";
+                    if (btnOrderIcon) btnOrderIcon.textContent = "💳";
+                } else {
+                    if (stripeNote) stripeNote.style.display = "none";
+                    if (btnOrderText) btnOrderText.textContent = "Place Order (Cash On Delivery)";
+                    if (btnOrderIcon) btnOrderIcon.textContent = "🛍️";
+                }
+            }
 
-    const elements = stripe.elements();
-    const card = elements.create("card");
-    card.mount("#card-element");
-
-    document.getElementById("paymentMethod").addEventListener("change", function () {
-        document.getElementById("card-section").style.display =
-            this.value === "Card" ? "block" : "none";
-    });
-</script>
+            if (payCOD) payCOD.addEventListener("change", updatePaymentState);
+            if (payCard) payCard.addEventListener("change", updatePaymentState);
+            updatePaymentState();
+        });
+    </script>
+}

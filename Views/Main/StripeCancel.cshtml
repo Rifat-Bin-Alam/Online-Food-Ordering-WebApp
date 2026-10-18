@@ -1,10 +1,23 @@
-﻿@{
+@{
     Layout = "_Layout";
-    ViewData["Title"] = "Payment Cancelled";
+    ViewData["Title"] = "Payment Cancelled - Gourmet Bites";
 }
 
-<div class="container mt-5 text-center">
-    <h2 class="text-danger">Payment Cancelled</h2>
-    <p>Your payment was not completed. You can try again or choose Cash on Delivery.</p>
-    <a asp-action="Checkout" class="btn btn-warning mt-3">Back to Checkout</a>
+<div class="py-5 text-center">
+    <div class="card p-5 border border-subtle bg-white rounded-3 shadow-sm mx-auto" style="max-width: 540px;">
+        <div style="font-size: 4rem; color: var(--primary-color);">⚠️</div>
+        <h2 class="mt-3 fw-bold text-dark">Payment Not Completed</h2>
+        <p class="text-muted mt-2" style="line-height: 1.6;">
+            The transaction was cancelled or could not be processed. Don't worry — your shopping cart is safely saved so you can try again or choose Cash on Delivery.
+        </p>
+
+        <div class="d-grid gap-2 mt-4">
+            <a asp-action="Checkout" class="btn-primary-custom py-3 text-center">
+                <span>🔄</span> Return to Checkout
+            </a>
+            <a asp-action="Cart" class="btn-secondary-custom py-2 text-center">
+                <span>🛒</span> View Cart
+            </a>
+        </div>
+    </div>
 </div>
