@@ -1,4 +1,5 @@
 # 🍽 Gourmet Bites — Online Food Ordering WebApp
+
 **Live Link: http://onlinefoodorderingbyrifat.runasp.net/**
 
 A full-stack, artisanal food-ordering e-commerce web application architected with **ASP.NET Core MVC (.NET 10.0)**, **Entity Framework Core**, **SQLite**, and **Stripe Checkout**. Designed with a warm culinary aesthetic, responsive slide-in cart drawer, live notification system, comprehensive customer checkout flow, and an administrator management portal.
